@@ -34,6 +34,14 @@ func publish(ctx context.Context) (interface{}, error) {
 	log.Printf("[publisher] - Page: %d Offset: %d ItemsPerPage %d | Cursor: %d/%d",
 		page.GetCurrentPage(), page.GetOffset(), page.GetItemsPerPage(), page.GetStartCursor(), page.GetEndCursor())
 
+	if page.GetCurrentPage() == 1 {
+		page.SetCursor(230)
+	}
+
+	if page.GetCurrentPage() == 3 {
+		page.SetCursor(12)
+	}
+
 	if page.GetCurrentPage() == 5 {
 		leaf.Stop(ctx)
 	}
