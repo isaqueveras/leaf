@@ -21,12 +21,10 @@ type workerPool struct {
 // newWorkerPool constructs a new worker pool
 func newWorkerPool(total uint64) iWorkerPool {
 	log.Printf("Creating worker pool with %d workers", total)
-
-	jobs := make(chan scheduleFunc)
+	jobs := make(chan scheduleFunc, total)
 	for i := 0; i < int(total); i++ {
 		go worker(jobs)
 	}
-
 	return &workerPool{jobs: jobs}
 }
 
@@ -41,12 +39,16 @@ func (p *workerPool) close() {
 func worker(jobs chan scheduleFunc) {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Printf("recover: %v\n", r)
-			return
+			fmt.Printf("worker in recover: %v\n", r)
 		}
 	}()
 
-	for job := range jobs {
+	for {
+		job, ok := <-jobs
+		if !ok {
+			break
+		}
+
 		job.Schedule()
 	}
 }

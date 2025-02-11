@@ -61,15 +61,10 @@ func New(ctx context.Context, workers, itemsPerPage uint64, interval time.Durati
 // Wait implements the method to wait for the queue to execute
 func (queue *queue) Wait() {
 	queue.group.wait()
-	<-queue.quit
 }
 
 func (queue *queue) stop() {
 	queue.quit <- true
-	close(queue.pipe)
-	queue.pool.close()
-	queue.group.cancel()
-	close(queue.quit)
 }
 
 // Consume implements the method to consume the data
@@ -80,12 +75,19 @@ func (queue *queue) Consume(fn ConsumerFunc) *queue {
 
 func consume(fn ConsumerFunc, queue *queue) func() error {
 	return func() error {
-		for value := range queue.pipe {
-			queue.pool.schedule(queue.group.wrap(func() error {
-				return fn.Consume(contextWithStop(contextWithData(queue.ctx, value), queue.stop))
-			}))
+		for {
+			select {
+			case <-queue.ctx.Done():
+				return queue.ctx.Err()
+			case value, ok := <-queue.pipe:
+				if !ok {
+					return nil
+				}
+				queue.pool.schedule(queue.group.wrap(func() error {
+					return fn.Consume(contextWithData(queue.ctx, value))
+				}))
+			}
 		}
-		return nil
 	}
 }
 
@@ -97,17 +99,31 @@ func (queue *queue) Publish(fn PublishFunc) *queue {
 
 func publish(fn PublishFunc, queue *queue) func() error {
 	return func() error {
-		for range time.NewTicker(queue.interval).C {
-			queue.pool.schedule(queue.group.wrap(func() error {
-				queue.page.calculate()
-				data, err := fn.Publish(contextWithStop(contextWithPage(queue.ctx, queue.page.getPage()), queue.stop))
-				if err != nil {
-					return err
-				}
-				queue.pipe <- data
+		interval := time.NewTicker(time.Millisecond * 200)
+		defer interval.Stop()
+
+		for {
+			select {
+			case <-queue.ctx.Done():
+				return queue.ctx.Err()
+			case <-queue.quit:
+				interval.Stop()
+				close(queue.pipe)
+				close(queue.quit)
 				return nil
-			}))
+			case <-interval.C:
+				interval.Reset(queue.interval)
+
+				queue.group.wrap(func() error {
+					queue.page.calculate()
+					data, err := fn.Publish(contextWithStop(contextWithPage(queue.ctx, queue.page.getPage()), queue.stop))
+					if err != nil {
+						return err
+					}
+					queue.pipe <- data
+					return nil
+				})()
+			}
 		}
-		return nil
 	}
 }

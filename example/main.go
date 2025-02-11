@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"math/rand"
 	"time"
 
 	"github.com/isaqueveras/leaf"
@@ -13,15 +14,15 @@ func main() {
 	// 2 - total number of workers
 	// 3 - total items per page
 	// 4 - interval at which the publish function will be executed
-	queue := leaf.New(context.Background(), 50, 100, time.Second)
+	queue := leaf.New(context.Background(), 10, 100, time.Second)
+	defer queue.Wait()
 
 	queue.Publish(publish)
 	queue.Consume(consume)
-
-	queue.Wait()
 }
 
 func consume(ctx context.Context) error {
+	time.Sleep(time.Second * time.Duration(rand.Intn(10)))
 	value := leaf.GetData(ctx).(time.Time)
 	log.Printf("[consumer] - Value: %v\n", value.String())
 	return nil
@@ -30,13 +31,15 @@ func consume(ctx context.Context) error {
 func publish(ctx context.Context) (interface{}, error) {
 	page := leaf.GetPage(ctx)
 
-	log.Printf("[publisher] - Page: %d Offset: %d ItemsPerPage %d",
+	log.Printf("[publisher] - Page: %d Offset: %d ItemsPerPage %d | Start: %d End: %d",
 		page.GetCurrentPage(),
 		page.GetOffset(),
 		page.GetItemsPerPage(),
+		page.GetStartCursor(),
+		page.GetEndCursor(),
 	)
 
-	if page.GetCurrentPage() == 5000 {
+	if page.GetCurrentPage() == 10 {
 		leaf.Stop(ctx)
 	}
 
