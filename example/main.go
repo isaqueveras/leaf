@@ -31,16 +31,20 @@ func consume(ctx context.Context) error {
 func publish(ctx context.Context) (interface{}, error) {
 	page := leaf.GetPage(ctx)
 
-	log.Printf("[publisher] - Page: %d Offset: %d ItemsPerPage %d | Start: %d End: %d",
-		page.GetCurrentPage(),
-		page.GetOffset(),
-		page.GetItemsPerPage(),
-		page.GetStartCursor(),
-		page.GetEndCursor(),
-	)
+	log.Printf("[publisher] - Page: %d Offset: %d ItemsPerPage %d | Cursor: %d",
+		page.GetCurrentPage(), page.GetOffset(), page.GetItemsPerPage(), page.GetCursor())
 
-	if page.GetCurrentPage() == 10 {
+	if page.GetCurrentPage() == 5 {
 		leaf.Stop(ctx)
+	}
+
+	switch page.GetCurrentPage() {
+	case 1:
+		page.SetCursor(74)
+	case 2:
+		page.SetCursor(123)
+	case 3:
+		page.SetCursor(248)
 	}
 
 	return time.Now(), nil

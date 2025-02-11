@@ -12,8 +12,8 @@ const (
 
 // GetPage get current page data
 func GetPage(ctx context.Context) IPage {
-	if value, ok := ctx.Value(pageKey).(page); ok {
-		return &value
+	if value, ok := ctx.Value(pageKey).(*page); ok {
+		return value
 	}
 	return nil
 }
@@ -30,7 +30,7 @@ func Stop(ctx context.Context) {
 	}
 }
 
-func contextWithPage(parent context.Context, page page) context.Context {
+func contextWithPage(parent context.Context, page *page) context.Context {
 	return context.WithValue(parent, pageKey, page)
 }
 

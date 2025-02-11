@@ -46,7 +46,7 @@ func worker(jobs chan scheduleFunc) {
 	for {
 		job, ok := <-jobs
 		if !ok {
-			break
+			return
 		}
 
 		job.Schedule()
