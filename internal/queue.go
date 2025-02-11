@@ -114,15 +114,14 @@ func publish(fn PublishFunc, queue *queue) func() error {
 			case <-interval.C:
 				interval.Reset(queue.interval)
 
-				queue.group.wrap(func() error {
-					queue.page.calculate()
-					data, err := fn.Publish(contextWithStop(contextWithPage(queue.ctx, queue.page.getPage()), queue.stop))
-					if err != nil {
-						return err
-					}
-					queue.pipe <- data
-					return nil
-				})()
+				queue.page.calculate()
+				page := queue.page.getPage()
+
+				data, err := fn.Publish(contextWithStop(contextWithPage(queue.ctx, page), queue.stop))
+				if err != nil {
+					return err
+				}
+				queue.pipe <- data
 			}
 		}
 	}
