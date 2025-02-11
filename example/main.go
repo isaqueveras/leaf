@@ -14,7 +14,7 @@ func main() {
 	// 2 - total number of workers
 	// 3 - total items per page
 	// 4 - interval at which the publish function will be executed
-	queue := leaf.New(context.Background(), 10, 100, time.Second)
+	queue := leaf.New(context.Background(), 100, 100, time.Second)
 	defer queue.Wait()
 
 	queue.Publish(publish)
@@ -31,20 +31,11 @@ func consume(ctx context.Context) error {
 func publish(ctx context.Context) (interface{}, error) {
 	page := leaf.GetPage(ctx)
 
-	log.Printf("[publisher] - Page: %d Offset: %d ItemsPerPage %d | Cursor: %d",
-		page.GetCurrentPage(), page.GetOffset(), page.GetItemsPerPage(), page.GetCursor())
+	log.Printf("[publisher] - Page: %d Offset: %d ItemsPerPage %d | Cursor: %d/%d",
+		page.GetCurrentPage(), page.GetOffset(), page.GetItemsPerPage(), page.GetStartCursor(), page.GetEndCursor())
 
 	if page.GetCurrentPage() == 5 {
 		leaf.Stop(ctx)
-	}
-
-	switch page.GetCurrentPage() {
-	case 1:
-		page.SetCursor(74)
-	case 2:
-		page.SetCursor(123)
-	case 3:
-		page.SetCursor(248)
 	}
 
 	return time.Now(), nil
