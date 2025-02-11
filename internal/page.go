@@ -24,7 +24,6 @@ type page struct {
 	offset       uint64
 
 	cursor uint64
-	// cursorMutex sync.Mutex
 }
 
 func newPage(itemsPerPage uint64) IPage {
