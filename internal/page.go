@@ -13,6 +13,8 @@ type IPage interface {
 	GetStartCursor() uint64
 	// GetStartCursor returns the ending ID of the current page in cursor-based pagination.
 	GetEndCursor() uint64
+	// SetCursor set the starting ID of the current page in cursor-based pagination
+	SetCursor(uint64)
 
 	getPage() *page
 	calculate()
@@ -27,18 +29,16 @@ type page struct {
 	cursorEnd   uint64
 }
 
-func newPage(itemsPerPage uint64) IPage {
-	return &page{itemsPerPage: itemsPerPage}
-}
+func newPage(itemsPerPage uint64) IPage { return &page{itemsPerPage: itemsPerPage} }
 
-// GetStartCursor returns the starting ID of the current page in cursor-based pagination
+// GetStartCursor returns the starting id of the current page in cursor-based pagination
 func (p *page) GetStartCursor() uint64 { return p.cursorStart }
 
-// GetStartCursor returns the ending ID of the current page in cursor-based pagination
+// GetStartCursor returns the ending id of the current page in cursor-based pagination
 func (p *page) GetEndCursor() uint64 { return p.cursorEnd }
 
-// SetCursor set the starting ID of the current page in cursor-based pagination
-func (p *page) SetCursor(cursor uint64) { p.cursorStart = cursor }
+// SetCursor set the starting id of the current page in cursor-based pagination
+func (p *page) SetCursor(cursor uint64) { p.cursorEnd = cursor }
 
 // GetOffset get the offset of the current page
 func (p *page) GetOffset() uint64 { return p.offset }
